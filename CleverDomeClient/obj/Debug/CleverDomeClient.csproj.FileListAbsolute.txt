@@ -1,0 +1,8 @@
+C:\Users\sgarkusha\Desktop\Sample2\CleverDomeClient\CleverDomeClient\bin\Debug\CleverDomeClient.exe.config
+C:\Users\sgarkusha\Desktop\Sample2\CleverDomeClient\CleverDomeClient\bin\Debug\CleverDomeClient.exe
+C:\Users\sgarkusha\Desktop\Sample2\CleverDomeClient\CleverDomeClient\bin\Debug\CleverDomeClient.pdb
+C:\Users\sgarkusha\Desktop\Sample2\CleverDomeClient\CleverDomeClient\bin\Debug\CleverDomeCommon.dll
+C:\Users\sgarkusha\Desktop\Sample2\CleverDomeClient\CleverDomeClient\bin\Debug\CleverDomeCommon.pdb
+C:\Users\sgarkusha\Desktop\Sample2\CleverDomeClient\CleverDomeClient\obj\Debug\CleverDomeClient.csprojResolveAssemblyReference.cache
+C:\Users\sgarkusha\Desktop\Sample2\CleverDomeClient\CleverDomeClient\obj\Debug\CleverDomeClient.exe
+C:\Users\sgarkusha\Desktop\Sample2\CleverDomeClient\CleverDomeClient\obj\Debug\CleverDomeClient.pdb
