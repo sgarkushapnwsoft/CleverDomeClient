@@ -18,12 +18,11 @@ namespace CleverDomeClient
         static int applicationID = 9;
         static int templateID = 0;
         static int descriptionID = 79;
-        string certPath = @"C:\Cert\CleverDomeTestCert.pfx";
-        string certPassword = "passw";
+        static string certPath = @"C:\Cert\CleverDomeTestCert.pfx";
+        static string certPassword = "passw";
 
         static void Main()
         {
-
             X509Certificate2 cert = GetCertificate();
             string allowedIPs = ""; //" + HttpContext.Current.UserHostAddress; // If you want access our service directly from browser.
             Guid? sessionID = SSORequester.GetSessionID(userID, cert, vendorName, allowedIPs);
@@ -114,5 +113,17 @@ namespace CleverDomeClient
             X509Certificate2 cert = SSOTools.GetCertificate(certPath, certPassword);
             return cert;
         }
+
+        static bool CreateUser(string userID, string firstName, string lastName, string email, string phone)
+        {
+            var channelFactory = new ChannelFactory<IVendorManagement>("WSHttpBinding_IVendorManagement");
+
+            channelFactory.Credentials.ClientCertificate.Certificate = GetCertificate();
+
+            IVendorManagement vendorMgmt = channelFactory.CreateChannel();
+
+            return vendorMgmt.CreateUser(userID, string.Empty, firstName, lastName, email, phone);
+        }
+
     }
 }

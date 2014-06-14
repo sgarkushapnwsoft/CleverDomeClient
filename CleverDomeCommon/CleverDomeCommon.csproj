@@ -50,6 +50,7 @@
     <Compile Include="SSO\SSOTools.cs" />
     <Compile Include="SSO\SSOTypes.cs" />
     <Compile Include="Streambuilder.cs" />
+    <Compile Include="VendorManagement.cs" />
     <Compile Include="Widgets.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
