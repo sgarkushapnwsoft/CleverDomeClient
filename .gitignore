@@ -182,9 +182,9 @@ $RECYCLE.BIN/
 # Mac crap
 .DS_Store
 
-CleverDomeClient/bin/Debug/*.*
-CleverDomeClient/bin/Release/*.*
-CleverDomeCommon/bin/Debug/*.*
-CleverDomeCommon/bin/Release/*.*
-CleverDomeClient/obj/*.*
-CleverDomeCommon/obj/*.*
+CleverDomeClient\bin\Debug\
+CleverDomeClient\bin/Release\
+CleverDomeCommon\bin/Debug\
+CleverDomeCommon\bin/Release\
+CleverDomeClient\obj\
+CleverDomeCommon\obj\
