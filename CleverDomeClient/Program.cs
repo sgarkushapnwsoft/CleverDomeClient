@@ -122,7 +122,7 @@ namespace CleverDomeClient
 
             IVendorManagement vendorMgmt = channelFactory.CreateChannel();
 
-            return vendorMgmt.CreateUser(userID, string.Empty, firstName, lastName, email, phone);
+            return vendorMgmt.CreateUser(userID, vendorName, firstName, lastName, email, phone);
         }
 
     }
