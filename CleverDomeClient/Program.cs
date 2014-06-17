@@ -8,6 +8,8 @@ using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using CleverDomeCommon.SSO;
 using CleverDomeDocumentManagement.Data;
+using System.Configuration;
+using System.Net;
 
 namespace CleverDomeClient
 {
@@ -18,8 +20,8 @@ namespace CleverDomeClient
         static int applicationID = 9;
         static int templateID = 0;
         static int descriptionID = 79;
-        static string certPath = @"C:\Cert\CleverDomeTestCert.pfx";
-        static string certPassword = "passw";
+        static string certPath = ConfigurationManager.AppSettings["CertPath"];
+        static string certPassword = ConfigurationManager.AppSettings["CertPassword"];
 
         static void Main()
         {
@@ -41,8 +43,50 @@ namespace CleverDomeClient
                 Console.WriteLine("SAML request not completed.");
             }
 
+            Console.WriteLine("Press 'Y' if you want to add user.");
+            string line = Console.ReadLine();
+            if (line.ToLower()[0] == 'y')
+            {
+                UserCreation();
+            }
+
             Console.WriteLine("Press any key to exit...");
             Console.ReadLine();
+        }
+
+        private static void UserCreation()
+        {
+            var channelFactory = new ChannelFactory<IVendorManagement>("WSHttpBinding_IVendorManagement");
+            channelFactory.Credentials.ClientCertificate.Certificate = GetCertificate();
+            IVendorManagement vendorMgmt = channelFactory.CreateChannel();
+
+            Console.WriteLine("Please enter UserID from your system to verify that this person doesn't exist in our database.");
+            string externalUserID = Console.ReadLine();
+
+            bool userExists = CheckUser(vendorMgmt, externalUserID);
+            if (userExists)
+            {
+                Console.WriteLine("Sorry, but this user already exists.");
+            }
+            else
+            {
+                Console.WriteLine("User is not present in our database. Please enter necessary information to create a new user.");
+
+                Console.WriteLine("First Name:");
+                string firstName = Console.ReadLine();
+
+                Console.WriteLine("Last Name:");
+                string lastName = Console.ReadLine();
+
+                Console.WriteLine("Email:");
+                string email = Console.ReadLine();
+
+                Console.WriteLine("Phone:");
+                string phone = Console.ReadLine();
+
+                bool userCreated = CreateUser(vendorMgmt, externalUserID, firstName, lastName, email, phone);
+                Console.WriteLine(userCreated ? "User has been created successfully." : "Sorry, but user has not been created.");
+            }
         }
 
         static Guid UploadFile(IWidgets widgetsClient, Guid sessionID, string fileName)
@@ -114,15 +158,14 @@ namespace CleverDomeClient
             return cert;
         }
 
-        static bool CreateUser(string userID, string firstName, string lastName, string email, string phone)
+        static bool CreateUser(IVendorManagement vendorMgmt, string userID, string firstName, string lastName, string email, string phone)
         {
-            var channelFactory = new ChannelFactory<IVendorManagement>("WSHttpBinding_IVendorManagement");
-
-            channelFactory.Credentials.ClientCertificate.Certificate = GetCertificate();
-
-            IVendorManagement vendorMgmt = channelFactory.CreateChannel();
-
             return vendorMgmt.CreateUser(userID, vendorName, firstName, lastName, email, phone);
+        }
+
+        static bool CheckUser(IVendorManagement vendorMgmt, string externalUserID)
+        {
+            return vendorMgmt.CheckUser(externalUserID, vendorName);
         }
 
     }
