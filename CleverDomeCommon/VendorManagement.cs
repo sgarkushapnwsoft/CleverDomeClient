@@ -16,7 +16,7 @@ public interface IVendorManagement
 {
     
     [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IVendorManagement/CreateUser", ReplyAction="http://tempuri.org/IVendorManagement/CreateUserResponse")]
-    bool CreateUser(string externalUserID, string vendorName, string firstName, string lastName, string email, string phone);
+    int CreateUser(string externalUserID, string vendorName, string firstName, string lastName, string email, string phone);
     
     [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IVendorManagement/CheckUser", ReplyAction="http://tempuri.org/IVendorManagement/CheckUserResponse")]
     bool CheckUser(string externaUserID, string vendorName);
@@ -56,7 +56,7 @@ public partial class VendorManagementClient : System.ServiceModel.ClientBase<IVe
     {
     }
     
-    public bool CreateUser(string externalUserID, string vendorName, string firstName, string lastName, string email, string phone)
+    public int CreateUser(string externalUserID, string vendorName, string firstName, string lastName, string email, string phone)
     {
         return base.Channel.CreateUser(externalUserID, vendorName, firstName, lastName, email, phone);
     }
