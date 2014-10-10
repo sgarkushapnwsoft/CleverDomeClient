@@ -56,6 +56,9 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="AppSettings.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CleverDomeCommon\CleverDomeCommon.csproj">

@@ -15,9 +15,9 @@ namespace CleverDomeClient
 {
     static class Program
     {
-        static string userID = "4";
-        static string vendorName = "EverNote";
-        static int applicationID = 9;
+        static string userID = ConfigurationManager.AppSettings["TestUserID"];
+        static string vendorName = ConfigurationManager.AppSettings["TestVendorName"];
+        static int applicationID = int.Parse(ConfigurationManager.AppSettings["TestApplicationID"]);
         static int templateID = 0;
         static int descriptionID = 79;
         static string certPath = ConfigurationManager.AppSettings["CertPath"];
