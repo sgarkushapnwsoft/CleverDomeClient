@@ -22,18 +22,22 @@ namespace CleverDomeClient
         static int descriptionID = 79;
         static string certPath = ConfigurationManager.AppSettings["CertPath"];
         static string certPassword = ConfigurationManager.AppSettings["CertPassword"];
+        static string testFilePath = ConfigurationManager.AppSettings["TestFilePath"];
+
+        static readonly string[] permissions = new string[] { "None", "Add New Revision", "Delete Document", "Modify Index", "Quality Review", "OSJ Review", "NIGO", "Admin Tab", "Back Office Processing", "Compliance" };
 
         static void Main()
         {
             X509Certificate2 cert = GetCertificate();
             string allowedIPs = ""; //" + HttpContext.Current.UserHostAddress; // If you want access our service directly from browser.
             Guid? sessionID = SSORequester.GetSessionID(userID, cert, vendorName, allowedIPs);
+            Guid documentGuid = default(Guid);
             if (sessionID.HasValue)
             {
                 Console.WriteLine("SAML request completed. SessionID = {0}.", sessionID);
                 ChannelFactory<IWidgets> channelFactory = new ChannelFactory<IWidgets>("BasicHttpBinding_IWidgets");
                 IWidgets widgets = channelFactory.CreateChannel();
-                Guid documentGuid = UploadFile(widgets, sessionID.Value, @"C:\TestFile.jpg");
+                documentGuid = UploadFile(widgets, sessionID.Value, testFilePath);
                 Console.WriteLine("Uploaded file guid: {0}", documentGuid);
                 SetTestMetadata(widgets, sessionID.Value, documentGuid);
                 channelFactory.Close();
@@ -45,16 +49,72 @@ namespace CleverDomeClient
 
             Console.WriteLine("Press 'Y' if you want to add user.");
             string line = Console.ReadLine();
+            int userCreatedID = default(int);
             if (line.ToLower()[0] == 'y')
             {
-                UserCreation();
+                userCreatedID = UserCreation();
+            }
+
+            if (userCreatedID > 0)
+            {
+                Console.WriteLine("Press 'Y' if you want to add permission to created user.");
+                line = Console.ReadLine();
+                if (line.ToLower()[0] == 'y')
+                {
+                    Console.WriteLine("SAML request completed. SessionID = {0}.", sessionID);
+                    ChannelFactory<IWidgets> channelFactory = new ChannelFactory<IWidgets>("BasicHttpBinding_IWidgets");
+                    IWidgets widgets = channelFactory.CreateChannel();
+                    SetTestPermission(widgets, sessionID.Value, userCreatedID, documentGuid);
+                    channelFactory.Close();
+                }
             }
 
             Console.WriteLine("Press any key to exit...");
             Console.ReadLine();
         }
 
-        private static void UserCreation()
+        private static void SetTestPermission(IWidgets widgets, Guid sessionID, int userID, Guid documentGuid)
+        {
+            PrintPermissions();
+
+            Console.WriteLine("Enter permission ID and value:");
+            string strPermissionID = Console.ReadLine();
+            int permissionID = int.Parse(strPermissionID);
+
+            Console.WriteLine("Enter true or false to enable or disable permission:");
+            string strPermissionValue = Console.ReadLine();
+            bool permissionValue = bool.Parse(strPermissionValue);
+
+            var res = widgets.SetPermissionForUser(sessionID, userID, permissionID, permissionValue, documentGuid);
+
+            if (res.Result == ResultType.Success)
+            {
+                Console.WriteLine("Successfully added permission.");
+
+                var userPermissions = widgets.GetUserPermissions(sessionID, userID, documentGuid).ReturnValue;
+
+                Console.WriteLine("User Permissions:");
+
+                foreach (var userPermission in userPermissions)
+                {
+                    Console.WriteLine("{0}: {1}", userPermission.Name, userPermission.Allowed);
+                }
+            }
+        }
+
+        private static void PrintPermissions()
+        {
+            Console.WriteLine("List of all permissions:");
+
+            for (int i = 0; i < permissions.Length; i++)
+            {
+                Console.WriteLine("{0}: {1}", i, permissions[i]);
+            }
+
+            Console.WriteLine();
+        }
+
+        private static int UserCreation()
         {
             var channelFactory = new ChannelFactory<IVendorManagement>("WSHttpBinding_IVendorManagement");
             channelFactory.Credentials.ClientCertificate.Certificate = GetCertificate();
@@ -63,7 +123,8 @@ namespace CleverDomeClient
             Console.WriteLine("Please enter UserID from your system to verify that this person doesn't exist in our database.");
             string externalUserID = Console.ReadLine();
 
-            bool userExists = CheckUser(vendorMgmt, externalUserID);
+            int userID = 0;
+            bool userExists = CheckUser(vendorMgmt, externalUserID, ref userID);
             if (userExists)
             {
                 Console.WriteLine("Sorry, but this user already exists.");
@@ -84,9 +145,18 @@ namespace CleverDomeClient
                 Console.WriteLine("Phone:");
                 string phone = Console.ReadLine();
 
-                bool userCreated = CreateUser(vendorMgmt, externalUserID, firstName, lastName, email, phone);
-                Console.WriteLine(userCreated ? "User has been created successfully." : "Sorry, but user has not been created.");
+                try
+                {
+                    userID = CreateUser(vendorMgmt, externalUserID, firstName, lastName, email, phone);
+                    Console.WriteLine("User has been created successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Sorry, but user has not been created.");
+                }
             }
+
+            return userID;
         }
 
         static Guid UploadFile(IWidgets widgetsClient, Guid sessionID, string fileName)
@@ -158,14 +228,19 @@ namespace CleverDomeClient
             return cert;
         }
 
-        static bool CreateUser(IVendorManagement vendorMgmt, string userID, string firstName, string lastName, string email, string phone)
+        static int CreateUser(IVendorManagement vendorMgmt, string userID, string firstName, string lastName, string email, string phone)
         {
             return vendorMgmt.CreateUser(userID, vendorName, firstName, lastName, email, phone);
         }
 
-        static bool CheckUser(IVendorManagement vendorMgmt, string externalUserID)
+        static bool CheckUser(IVendorManagement vendorMgmt, string externalUserID, ref int userID)
         {
-            return vendorMgmt.CheckUser(externalUserID, vendorName);
+            var nullUserID = vendorMgmt.CheckUser(externalUserID, vendorName);
+            if (nullUserID.HasValue)
+            {
+                userID = nullUserID.Value;
+            }
+            return nullUserID.HasValue;
         }
 
     }
