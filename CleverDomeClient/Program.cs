@@ -20,9 +20,9 @@ namespace CleverDomeClient
         static int applicationID = int.Parse(ConfigurationManager.AppSettings["TestApplicationID"]);
         static int templateID = 0;
         static int descriptionID = 79;
-        static string certPath = ConfigurationManager.AppSettings["CertPath"];
+        const string certPath = "VendorCertificate.pfx";
         static string certPassword = ConfigurationManager.AppSettings["CertPassword"];
-        static string testFilePath = ConfigurationManager.AppSettings["TestFilePath"];
+        static string testFilePath = "TestFile.pdf";
 
         static readonly string[] permissions = new string[] { "None", "Add New Revision", "Delete Document", "Modify Index", "Quality Review", "OSJ Review", "NIGO", "Admin Tab", "Back Office Processing", "Compliance" };
 
