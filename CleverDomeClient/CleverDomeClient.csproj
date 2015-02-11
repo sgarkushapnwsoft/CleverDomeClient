@@ -56,10 +56,6 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
-    <None Include="AppSettings.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <SubType>Designer</SubType>
-    </None>
     <None Include="TestFile.pdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

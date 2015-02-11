@@ -38,6 +38,7 @@ namespace CleverDomeClient
                 documentGuid = UploadFile(widgets, sessionID.Value, testFilePath);
                 Console.WriteLine("Uploaded file guid: {0}", documentGuid);
                 SetTestMetadata(widgets, sessionID.Value, documentGuid);
+                TestSecurityGroups(widgets, sessionID.Value, documentGuid);
                 channelFactory.Close();
             }
             else
@@ -240,6 +241,73 @@ namespace CleverDomeClient
             }
             return nullUserID.HasValue;
         }
+
+        #region Security Group Test
+
+        private static void PrintSecurityGroup(IWidgets widgets, Guid sessionID, int securityGroupID)
+        {
+            UserData[] users = widgets.GetUsersForGroup(sessionID, securityGroupID).ReturnValue;
+            if (users.Length == 0)
+            {
+                Console.WriteLine("No users in the security group.");
+            }
+            else
+            {
+                Console.WriteLine("Security group users:");
+                foreach (UserData user in users)
+                {
+                    Console.WriteLine("\tID: {0}, Name: {1}.", user.ID, user.FullName);
+                }
+            }
+        }
+
+        private static void RemoveAllUsersFromSecurityGroup(IWidgets widgets, Guid sessionID, int securityGroupID)
+        {
+            UserData[] users = widgets.GetUsersForGroup(sessionID, securityGroupID).ReturnValue;
+            foreach (UserData user in users)
+            {
+                widgets.RemoveUserFromSecurityGroup(sessionID, securityGroupID, user.ID);
+            }
+
+            Console.WriteLine("Remove users from the security group");
+        }
+
+        private static int GetInternalUserID(string externalUserID)
+        {
+            var channelFactory = new ChannelFactory<IVendorManagement>("WSHttpBinding_IVendorManagement");
+            channelFactory.Credentials.ClientCertificate.Certificate = GetCertificate();
+            IVendorManagement vendorMgmt = channelFactory.CreateChannel();
+            int internalUserID = vendorMgmt.CheckUser(externalUserID, vendorName).Value;
+            channelFactory.Close();
+            return internalUserID;
+        }
+
+        private static void TestSecurityGroups(IWidgets widgets, Guid sessionID, Guid documentGuid)
+        {
+            var createGroupResult = widgets.CreateSecurityGroup(sessionID, "Test 1", "Test Security Group 1", 1, GetInternalUserID(Program.userID));
+            int securityGroupID = createGroupResult.ReturnValue.ID.Value;
+            List<int> usersToAdd = new List<int> { 1, 2, 3 };
+            foreach (int userID in usersToAdd)
+            {
+                widgets.AddUserToSecurityGroup(sessionID, securityGroupID, userID);
+            }
+
+            PrintSecurityGroup(widgets, sessionID, securityGroupID);
+            RemoveAllUsersFromSecurityGroup(widgets, sessionID, securityGroupID);
+            PrintSecurityGroup(widgets, sessionID, securityGroupID);
+
+            widgets.AttachSecurityGroupsToDocument(sessionID, documentGuid, new int[] { securityGroupID }, (int)PermissionLevel.Modify);
+            var groupsBeforeDeletion = widgets.GetSecurityGroups(sessionID, documentGuid).ReturnValue;
+            Console.WriteLine("Groups count before removing: {0}" + groupsBeforeDeletion.DocumentSecurityData.Length);
+
+            widgets.RemoveSecurityGroupFromDocument(sessionID, documentGuid, securityGroupID);
+            var groupsAfterDeletion = widgets.GetSecurityGroups(sessionID, documentGuid).ReturnValue;
+            Console.WriteLine("Groups count after removing: {0}", groupsAfterDeletion.DocumentSecurityData.Length);
+
+            widgets.RemoveSecurityGroup(sessionID, securityGroupID);
+        }
+
+        #endregion
 
     }
 }
