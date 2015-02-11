@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PermissionLevel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SSORequester.cs" />
     <Compile Include="SSO\ISSOService.cs" />

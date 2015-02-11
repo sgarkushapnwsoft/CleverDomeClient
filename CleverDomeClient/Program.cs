@@ -24,8 +24,6 @@ namespace CleverDomeClient
         static string certPassword = ConfigurationManager.AppSettings["CertPassword"];
         static string testFilePath = "TestFile.pdf";
 
-        static readonly string[] permissions = new string[] { "None", "Add New Revision", "Delete Document", "Modify Index", "Quality Review", "OSJ Review", "NIGO", "Admin Tab", "Back Office Processing", "Compliance" };
-
         static void Main()
         {
             X509Certificate2 cert = GetCertificate();
@@ -77,41 +75,41 @@ namespace CleverDomeClient
         {
             PrintPermissions();
 
-            Console.WriteLine("Enter permission ID and value:");
+            Console.WriteLine("Enter permission level:");
             string strPermissionID = Console.ReadLine();
             int permissionID = int.Parse(strPermissionID);
 
-            Console.WriteLine("Enter true or false to enable or disable permission:");
-            string strPermissionValue = Console.ReadLine();
-            bool permissionValue = bool.Parse(strPermissionValue);
-
-            var res = widgets.SetPermissionForUser(sessionID, userID, permissionID, permissionValue, documentGuid);
+            var res = widgets.SetPermissionsForUser(sessionID, new Guid[] { documentGuid }, userID, permissionID);
 
             if (res.Result == ResultType.Success)
             {
                 Console.WriteLine("Successfully added permission.");
 
-                var userPermissions = widgets.GetUserPermissions(sessionID, userID, documentGuid).ReturnValue;
+                var userPermissions = widgets
+                    .GetDocumentSharingInfo(sessionID, documentGuid).ReturnValue
+                    .DocumentUsersSharing.Where(u => u.UserID == userID).Single()
+                    .Permissions;
 
-                Console.WriteLine("User Permissions:");
-
-                foreach (var userPermission in userPermissions)
-                {
-                    Console.WriteLine("{0}: {1}", userPermission.Name, userPermission.Allowed);
-                }
+                PrintPermissions(userPermissions.ID);
             }
         }
 
-        private static void PrintPermissions()
+        private static void PrintPermissions(int permissionLevel = (int)PermissionLevel.Admin)
         {
             Console.WriteLine("List of all permissions:");
 
-            for (int i = 0; i < permissions.Length; i++)
+            foreach (var permission in
+                GetEnumValues<PermissionLevel>().Where(p => (int)p <= permissionLevel))
             {
-                Console.WriteLine("{0}: {1}", i, permissions[i]);
+                Console.WriteLine("{0}: {1}", (int)permission, permission.ToString());
             }
 
             Console.WriteLine();
+        }
+
+        private static IEnumerable<T> GetEnumValues<T>()
+        {
+            return Enum.GetValues(typeof(T)).Cast<T>();
         }
 
         private static int UserCreation()
