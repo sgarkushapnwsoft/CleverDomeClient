@@ -298,11 +298,11 @@ namespace CleverDomeClient
 
             widgets.AttachSecurityGroupsToDocument(sessionID, documentGuid, new int[] { securityGroupID }, (int)PermissionLevel.Modify);
             var groupsBeforeDeletion = widgets.GetSecurityGroups(sessionID, documentGuid).ReturnValue;
-            Console.WriteLine("Groups count before removing: {0}" + groupsBeforeDeletion.DocumentSecurityData.Length);
+            Console.WriteLine("Groups count before removing: {0}.", groupsBeforeDeletion.DocumentSecurityData.Length);
 
             widgets.RemoveSecurityGroupFromDocument(sessionID, documentGuid, securityGroupID);
             var groupsAfterDeletion = widgets.GetSecurityGroups(sessionID, documentGuid).ReturnValue;
-            Console.WriteLine("Groups count after removing: {0}", groupsAfterDeletion.DocumentSecurityData.Length);
+            Console.WriteLine("Groups count after removing: {0}.", groupsAfterDeletion.DocumentSecurityData.Length);
 
             widgets.RemoveSecurityGroup(sessionID, securityGroupID);
         }
