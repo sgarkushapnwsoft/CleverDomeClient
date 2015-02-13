@@ -5,6 +5,7 @@ using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using CleverDomeCommon.SSO;
 using System.ServiceModel;
+using System.Configuration;
 
 namespace CleverDomeCommon
 {
@@ -19,6 +20,7 @@ namespace CleverDomeCommon
             ISSOService ssoClient = channelFactory.CreateChannel();
             ResponseType r = ssoClient.GetSSO(new GetSSORequest { AuthnRequest = auth }).Response;
 
+			var cert2 = ConfigurationManager.AppSettings["TestVendorName"];
             channelFactory.Close();
             if (SSOTools.VerifySignature(r, cert))
             {

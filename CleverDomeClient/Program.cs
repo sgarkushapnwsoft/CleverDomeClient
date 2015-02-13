@@ -20,7 +20,7 @@ namespace CleverDomeClient
         static int applicationID = int.Parse(ConfigurationManager.AppSettings["TestApplicationID"]);
         static int templateID = 0;
         static int descriptionID = 79;
-        const string certPath = "VendorCertificate.pfx";
+		static string certPath = ConfigurationManager.AppSettings["VendorCertificatePath"];
         static string certPassword = ConfigurationManager.AppSettings["CertPassword"];
         static string testFilePath = "TestFile.pdf";
 
@@ -115,7 +115,7 @@ namespace CleverDomeClient
 
         private static int UserCreation()
         {
-            var channelFactory = new ChannelFactory<IVendorManagement>("WSHttpBinding_IVendorManagement");
+			var channelFactory = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
             channelFactory.Credentials.ClientCertificate.Certificate = GetCertificate();
             IVendorManagement vendorMgmt = channelFactory.CreateChannel();
 
@@ -274,7 +274,7 @@ namespace CleverDomeClient
 
         private static int GetInternalUserID(string externalUserID)
         {
-            var channelFactory = new ChannelFactory<IVendorManagement>("WSHttpBinding_IVendorManagement");
+			var channelFactory = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
             channelFactory.Credentials.ClientCertificate.Certificate = GetCertificate();
             IVendorManagement vendorMgmt = channelFactory.CreateChannel();
             int internalUserID = vendorMgmt.CheckUser(externalUserID, vendorName).Value;
