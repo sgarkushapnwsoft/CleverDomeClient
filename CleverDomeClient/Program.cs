@@ -22,13 +22,14 @@ namespace CleverDomeClient
         static int descriptionID = 79;
 		static string certPath = ConfigurationManager.AppSettings["VendorCertificatePath"];
         static string certPassword = ConfigurationManager.AppSettings["CertPassword"];
+        static string cleverCertPath = ConfigurationManager.AppSettings["CleverDomeCertPath"];
         static string testFilePath = "TestFile.pdf";
 
         static void Main()
         {
-            X509Certificate2 cert = GetCertificate();
             string allowedIPs = ""; //" + HttpContext.Current.UserHostAddress; // If you want access our service directly from browser.
-            Guid? sessionID = SSORequester.GetSessionID(userID, cert, vendorName, allowedIPs);
+            var ssoRequester = new SSORequester(GetClientCertificate(), GetServerCertificate());
+            Guid? sessionID = ssoRequester.GetSessionID(userID, vendorName, allowedIPs);
             Guid documentGuid = default(Guid);
             if (sessionID.HasValue)
             {
@@ -116,7 +117,7 @@ namespace CleverDomeClient
         private static int UserCreation()
         {
 			var channelFactory = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
-            channelFactory.Credentials.ClientCertificate.Certificate = GetCertificate();
+            channelFactory.Credentials.ClientCertificate.Certificate = GetClientCertificate();
             IVendorManagement vendorMgmt = channelFactory.CreateChannel();
 
             Console.WriteLine("Please enter UserID from your system to verify that this person doesn't exist in our database.");
@@ -221,10 +222,14 @@ namespace CleverDomeClient
             }
         }
 
-        static X509Certificate2 GetCertificate()
+        static X509Certificate2 GetClientCertificate()
         {
-            X509Certificate2 cert = SSOTools.GetCertificate(certPath, certPassword);
-            return cert;
+            return SSOTools.GetCertificate(certPath, certPassword);
+        }
+
+        static X509Certificate2 GetServerCertificate()
+        {
+            return new X509Certificate2(cleverCertPath);
         }
 
         static int CreateUser(IVendorManagement vendorMgmt, string userID, string firstName, string lastName, string email, string phone)
@@ -275,7 +280,7 @@ namespace CleverDomeClient
         private static int GetInternalUserID(string externalUserID)
         {
 			var channelFactory = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
-            channelFactory.Credentials.ClientCertificate.Certificate = GetCertificate();
+            channelFactory.Credentials.ClientCertificate.Certificate = GetClientCertificate();
             IVendorManagement vendorMgmt = channelFactory.CreateChannel();
             int internalUserID = vendorMgmt.CheckUser(externalUserID, vendorName).Value;
             channelFactory.Close();

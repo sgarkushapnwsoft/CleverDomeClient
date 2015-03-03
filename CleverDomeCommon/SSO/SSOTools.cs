@@ -390,7 +390,6 @@ namespace CleverDomeCommon.SSO
 
             // Create a new SignedXml object and pass it the xml doc
             SignedXml signedXml = new SignedXml(doc);
-		    string path = ConfigurationManager.AppSettings["CleverDomeCertPath"];
             // Get signature
             var signs = doc.GetElementsByTagName("Signature");
             if (signs.Count != 1)
@@ -398,33 +397,10 @@ namespace CleverDomeCommon.SSO
                 return false;
             }
             XmlElement signatureNode = (XmlElement)signs[0];
-			//X509Certificate2 asd = GetCleverDomeCert();
-			X509Certificate2 asd = null;
-			if (System.IO.File.Exists(path))
-			{
-				asd = new X509Certificate2(path);
-			}
 		    
 			signedXml.LoadXml(signatureNode);
-			var xcv = signedXml.CheckSignature(asd, true);
-            //return signatureNode != null;
-			return xcv;
-			//return signedXml.CheckSignature(Key.FromXmlString());
+			return signedXml.CheckSignature(cert, true);
         }
-
-		public static X509Certificate2 GetCleverDomeCert()
-		{
-			var _cleverDomeCertKey = "CleverDomeCert";
-
-			try
-			{
-				return GetCert(ConfigurationManager.AppSettings[_cleverDomeCertKey]);
-			}
-			catch (Exception e)
-			{
-				throw new Exception("Error retrieving cleverDome cert", e);
-			}
-		}
 
 		private static X509Certificate2 GetCert(string thumbprint)
 		{
