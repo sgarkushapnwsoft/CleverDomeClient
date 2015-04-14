@@ -7,6 +7,8 @@ using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
+using System.Configuration;
+using System.Security.Cryptography;
 
 namespace CleverDomeCommon.SSO
 {
@@ -388,7 +390,6 @@ namespace CleverDomeCommon.SSO
 
             // Create a new SignedXml object and pass it the xml doc
             SignedXml signedXml = new SignedXml(doc);
-
             // Get signature
             var signs = doc.GetElementsByTagName("Signature");
             if (signs.Count != 1)
@@ -396,8 +397,29 @@ namespace CleverDomeCommon.SSO
                 return false;
             }
             XmlElement signatureNode = (XmlElement)signs[0];
-
-            return signatureNode != null;
+		    
+			signedXml.LoadXml(signatureNode);
+			return signedXml.CheckSignature(cert, true);
         }
+
+		private static X509Certificate2 GetCert(string thumbprint)
+		{
+			X509Certificate2 certificate = null;
+
+			X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+			store.Open(OpenFlags.ReadOnly);
+
+			X509Certificate2Collection coll = store.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, false);
+
+			if (coll.Count < 1)
+			{
+				throw new ArgumentException("Unable to locate certificate with thumbprint = " + thumbprint);
+			}
+
+			certificate = coll[0];
+			store.Close();
+
+			return certificate;
+		}
     }
 }
