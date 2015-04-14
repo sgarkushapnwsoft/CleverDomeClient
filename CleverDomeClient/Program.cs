@@ -18,8 +18,6 @@ namespace CleverDomeClient
         static string userID = ConfigurationManager.AppSettings["TestUserID"];
         static string vendorName = ConfigurationManager.AppSettings["TestVendorName"];
         static int applicationID = int.Parse(ConfigurationManager.AppSettings["TestApplicationID"]);
-        static int templateID = 0;
-        static int descriptionID = 79;
         const string certPath = "VendorCertificate.pfx";
         static string certPassword = ConfigurationManager.AppSettings["CertPassword"];
         static string testFilePath = "TestFile.pdf";
@@ -166,8 +164,6 @@ namespace CleverDomeClient
                 Dictionary<string, string> parameters = new Dictionary<string, string>();
                 parameters.Add("sessionID", sessionID.ToString());
                 parameters.Add("applicationID", applicationID.ToString());
-                parameters.Add("templateID", templateID.ToString());
-                parameters.Add("descriptionID", descriptionID.ToString());
                 postStream = StreamBuilder.Build(file, Path.GetFileName(fileName), parameters);
             }
 
