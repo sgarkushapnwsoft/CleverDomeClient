@@ -18,8 +18,6 @@ namespace CleverDomeClient
         static string userID = ConfigurationManager.AppSettings["TestUserID"];
         static string vendorName = ConfigurationManager.AppSettings["TestVendorName"];
         static int applicationID = int.Parse(ConfigurationManager.AppSettings["TestApplicationID"]);
-        static int templateID = 0;
-        static int descriptionID = 79;
 		static string certPath = ConfigurationManager.AppSettings["VendorCertificatePath"];
         static string certPassword = ConfigurationManager.AppSettings["CertPassword"];
         static string cleverCertPath = ConfigurationManager.AppSettings["CleverDomeCertPath"];
@@ -167,8 +165,6 @@ namespace CleverDomeClient
                 Dictionary<string, string> parameters = new Dictionary<string, string>();
                 parameters.Add("sessionID", sessionID.ToString());
                 parameters.Add("applicationID", applicationID.ToString());
-                parameters.Add("templateID", templateID.ToString());
-                parameters.Add("descriptionID", descriptionID.ToString());
                 postStream = StreamBuilder.Build(file, Path.GetFileName(fileName), parameters);
             }
 
@@ -183,7 +179,7 @@ namespace CleverDomeClient
             PrintMetadata(widgets, sessionID, documentGuid);
             DocumentMetadataValueBase[] values = new DocumentMetadataValueBase [1]
             {
-                new DocumentMetadataValueBase{FieldID= 99, FieldValue = "https://google.com" }
+                new DocumentMetadataValueBase{FieldID= 78, FieldValue = "https://google.com" }
             };
 
             var result = widgets.SetMetadataValues(sessionID, documentGuid, values, new int[0]);
