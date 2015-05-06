@@ -6,7 +6,7 @@ using System.ServiceModel;
 using CleverDomeCommon;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
-using CleverDomeCommon.SSO;
+using CleverDomeSSO.Metadata;
 using CleverDomeDocumentManagement.Data;
 using System.Configuration;
 using System.Net;

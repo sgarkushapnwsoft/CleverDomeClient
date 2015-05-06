@@ -31,6 +31,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="SSOMetadata, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\SSOMetadata.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
@@ -47,10 +51,6 @@
     <Compile Include="PermissionLevel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SSORequester.cs" />
-    <Compile Include="SSO\ISSOService.cs" />
-    <Compile Include="SSO\OXmlSerializer.cs" />
-    <Compile Include="SSO\SSOTools.cs" />
-    <Compile Include="SSO\SSOTypes.cs" />
     <Compile Include="Streambuilder.cs" />
     <Compile Include="VendorManagement.cs" />
     <Compile Include="Widgets.cs" />
