@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="PermissionLevel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SecurityGroupType.cs" />
     <Compile Include="SSORequester.cs" />
     <Compile Include="Streambuilder.cs" />
     <Compile Include="VendorManagement.cs" />

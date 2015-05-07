@@ -314,5 +314,54 @@ namespace CleverDomeClient
 
         #endregion
 
+        static void CreateClient(IVendorManagement vendorMgmt, IWidgets widgets, Guid sessionID,
+            string userID, string firstName, string lastName, string email, string phone,
+            string securityGroupName, string securityGroupDescription,
+            out int clientID, out int securityGroupID)
+        {
+            clientID = vendorMgmt.CreateUser(userID, vendorName, firstName, lastName, email, phone);
+            
+            var response = widgets.CreateSecurityGroup(sessionID, securityGroupName, securityGroupDescription, (int)CleverDomeCommon.SecurityGroupType.Client, clientID);
+            if (response.Result != ResultType.Success)
+            {
+                throw new Exception(response.Message);
+            }
+
+            securityGroupID = response.ReturnValue.ID.Value;
+        }
+
+        static void CreateAdvisor(IVendorManagement vendorMgmt, IWidgets widgets, Guid sessionID,
+            string userID, string firstName, string lastName, string email, string phone,
+            string securityGroupName, string securityGroupDescription,
+            out int advisorID, out int securityGroupID)
+        {
+            advisorID = vendorMgmt.CreateUser(userID, vendorName, firstName, lastName, email, phone);
+
+            var response = widgets.CreateSecurityGroup(sessionID, securityGroupName, securityGroupDescription, (int)CleverDomeCommon.SecurityGroupType.Owner, advisorID);
+            if (response.Result != ResultType.Success)
+            {
+                throw new Exception(response.Message);
+            }
+
+            securityGroupID = response.ReturnValue.ID.Value;
+        }
+
+        static void AddClientToAdvisor(int clientID, int advisorID,
+            IVendorManagement vendorMgmt, IWidgets widgets, Guid sessionID,
+            string vendorName)
+        {
+            var response = widgets.GetUserSecurityGroups(sessionID, clientID, true, (int)CleverDomeCommon.SecurityGroupType.Client);
+            if (response.Result != ResultType.Success)
+            {
+                throw new Exception(response.Message);
+            }
+
+            var securityGroupID = response.ReturnValue.Single().ID.Value;
+
+            widgets.AddUserToSecurityGroup(sessionID, securityGroupID, advisorID);
+
+            vendorMgmt.AllowAccessToUserTagsHierarchy(vendorName, advisorID, clientID);
+        }
+
     }
 }
