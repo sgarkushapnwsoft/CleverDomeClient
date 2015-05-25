@@ -38,6 +38,12 @@ public interface IVendorManagement
     
     [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IVendorManagement/DenyAccessToUserTagsHierarchy", ReplyAction="http://tempuri.org/IVendorManagement/DenyAccessToUserTagsHierarchyResponse")]
     System.Threading.Tasks.Task DenyAccessToUserTagsHierarchyAsync(string vendorName, int accessorID, int sharedUserID);
+    
+    [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IVendorManagement/DeleteUser", ReplyAction="http://tempuri.org/IVendorManagement/DeleteUserResponse")]
+    void DeleteUser(string externalUserID, string vendorName);
+    
+    [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IVendorManagement/DeleteUser", ReplyAction="http://tempuri.org/IVendorManagement/DeleteUserResponse")]
+    System.Threading.Tasks.Task DeleteUserAsync(string externalUserID, string vendorName);
 }
 
 [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -112,5 +118,15 @@ public partial class VendorManagementClient : System.ServiceModel.ClientBase<IVe
     public System.Threading.Tasks.Task DenyAccessToUserTagsHierarchyAsync(string vendorName, int accessorID, int sharedUserID)
     {
         return base.Channel.DenyAccessToUserTagsHierarchyAsync(vendorName, accessorID, sharedUserID);
+    }
+    
+    public void DeleteUser(string externalUserID, string vendorName)
+    {
+        base.Channel.DeleteUser(externalUserID, vendorName);
+    }
+    
+    public System.Threading.Tasks.Task DeleteUserAsync(string externalUserID, string vendorName)
+    {
+        return base.Channel.DeleteUserAsync(externalUserID, vendorName);
     }
 }

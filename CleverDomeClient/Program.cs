@@ -314,12 +314,138 @@ namespace CleverDomeClient
 
         #endregion
 
+        static void CreateClient()
+        {
+            string allowedIPs = "";
+            var ssoRequester = new SSORequester(GetClientCertificate(), GetServerCertificate());
+            Guid? sessionID = ssoRequester.GetSessionID(userID, vendorName, allowedIPs);
+            var sessionGuid = sessionID.Value;
+
+            ChannelFactory<IWidgets> channelFactory = new ChannelFactory<IWidgets>("BasicHttpBinding_IWidgets");
+            IWidgets widgets = channelFactory.CreateChannel();
+
+            var channelFactory2 = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
+            channelFactory2.Credentials.ClientCertificate.Certificate = GetClientCertificate();
+            IVendorManagement vendorMgmt = channelFactory2.CreateChannel();
+
+            Console.WriteLine("Please enter UserID from your system to verify that this person doesn't exist in our database.");
+            string externalUserID = Console.ReadLine();
+
+            Console.WriteLine("First Name:");
+            string firstName = Console.ReadLine();
+
+            Console.WriteLine("Last Name:");
+            string lastName = Console.ReadLine();
+
+            Console.WriteLine("Email:");
+            string email = Console.ReadLine();
+
+            Console.WriteLine("Phone:");
+            string phone = Console.ReadLine();
+
+            Console.WriteLine("SecurityGroup Name:");
+            string securityGroupName = Console.ReadLine();
+
+            Console.WriteLine("SecurityGroup Description:");
+            string securityGroupDescription = Console.ReadLine();
+
+            int clientID, securityGroupID;
+            CreateClient(vendorMgmt, widgets, sessionGuid,
+                externalUserID, firstName, lastName, email, phone,
+                securityGroupName, securityGroupDescription,
+                out clientID, out securityGroupID);
+
+            Console.WriteLine("ClientID: {0}", clientID);
+            Console.WriteLine("SecurityGroupID: {0}", securityGroupID);
+
+            channelFactory2.Close();
+            channelFactory.Close();
+        }
+
+        static void DeleteUser()
+        {
+            string allowedIPs = "";
+            var ssoRequester = new SSORequester(GetClientCertificate(), GetServerCertificate());
+            Guid? sessionID = ssoRequester.GetSessionID(userID, vendorName, allowedIPs);
+            var sessionGuid = sessionID.Value;
+
+            ChannelFactory<IWidgets> channelFactory = new ChannelFactory<IWidgets>("BasicHttpBinding_IWidgets");
+            IWidgets widgets = channelFactory.CreateChannel();
+
+            var channelFactory2 = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
+            channelFactory2.Credentials.ClientCertificate.Certificate = GetClientCertificate();
+            IVendorManagement vendorMgmt = channelFactory2.CreateChannel();
+
+            Console.WriteLine("Please enter UserID from your system to delete the user.");
+            string externalUserID = Console.ReadLine();
+
+            DeleteUser(vendorMgmt, externalUserID);
+            Console.WriteLine("User is deleted sucessfully.");
+
+            channelFactory2.Close();
+            channelFactory.Close();
+        }
+
+        static void AddClientToAdvisor()
+        {
+            string allowedIPs = "";
+            var ssoRequester = new SSORequester(GetClientCertificate(), GetServerCertificate());
+            Guid? sessionID = ssoRequester.GetSessionID(userID, vendorName, allowedIPs);
+            var sessionGuid = sessionID.Value;
+
+            ChannelFactory<IWidgets> channelFactory = new ChannelFactory<IWidgets>("BasicHttpBinding_IWidgets");
+            IWidgets widgets = channelFactory.CreateChannel();
+
+            var channelFactory2 = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
+            channelFactory2.Credentials.ClientCertificate.Certificate = GetClientCertificate();
+            IVendorManagement vendorMgmt = channelFactory2.CreateChannel();
+
+            Console.WriteLine("Client User ID:");
+            int clientID = int.Parse(Console.ReadLine());
+
+            Console.WriteLine("Advisor User ID:");
+            int advisorID = int.Parse(Console.ReadLine());
+
+            AddClientToAdvisor(clientID, advisorID,
+                vendorMgmt, widgets, sessionGuid);
+
+            channelFactory2.Close();
+            channelFactory.Close();
+        }
+
+        static void RemoveClientFromAdvisor()
+        {
+            string allowedIPs = "";
+            var ssoRequester = new SSORequester(GetClientCertificate(), GetServerCertificate());
+            Guid? sessionID = ssoRequester.GetSessionID(userID, vendorName, allowedIPs);
+            var sessionGuid = sessionID.Value;
+
+            ChannelFactory<IWidgets> channelFactory = new ChannelFactory<IWidgets>("BasicHttpBinding_IWidgets");
+            IWidgets widgets = channelFactory.CreateChannel();
+
+            var channelFactory2 = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
+            channelFactory2.Credentials.ClientCertificate.Certificate = GetClientCertificate();
+            IVendorManagement vendorMgmt = channelFactory2.CreateChannel();
+
+            Console.WriteLine("Client User ID:");
+            int clientID = int.Parse(Console.ReadLine());
+
+            Console.WriteLine("Advisor User ID:");
+            int advisorID = int.Parse(Console.ReadLine());
+
+            RemoveClientFromAdvisor(clientID, advisorID,
+                vendorMgmt, widgets, sessionGuid);
+
+            channelFactory2.Close();
+            channelFactory.Close();
+        }
+
         static void CreateClient(IVendorManagement vendorMgmt, IWidgets widgets, Guid sessionID,
-            string userID, string firstName, string lastName, string email, string phone,
+            string externalUserID, string firstName, string lastName, string email, string phone,
             string securityGroupName, string securityGroupDescription,
             out int clientID, out int securityGroupID)
         {
-            clientID = vendorMgmt.CreateUser(userID, vendorName, firstName, lastName, email, phone);
+            clientID = vendorMgmt.CreateUser(externalUserID, vendorName, firstName, lastName, email, phone);
             
             var response = widgets.CreateSecurityGroup(sessionID, securityGroupName, securityGroupDescription, (int)CleverDomeCommon.SecurityGroupType.Client, clientID);
             if (response.Result != ResultType.Success)
@@ -331,11 +457,11 @@ namespace CleverDomeClient
         }
 
         static void CreateAdvisor(IVendorManagement vendorMgmt, IWidgets widgets, Guid sessionID,
-            string userID, string firstName, string lastName, string email, string phone,
+            string externalUserID, string firstName, string lastName, string email, string phone,
             string securityGroupName, string securityGroupDescription,
             out int advisorID, out int securityGroupID)
         {
-            advisorID = vendorMgmt.CreateUser(userID, vendorName, firstName, lastName, email, phone);
+            advisorID = vendorMgmt.CreateUser(externalUserID, vendorName, firstName, lastName, email, phone);
 
             var response = widgets.CreateSecurityGroup(sessionID, securityGroupName, securityGroupDescription, (int)CleverDomeCommon.SecurityGroupType.Owner, advisorID);
             if (response.Result != ResultType.Success)
@@ -346,9 +472,13 @@ namespace CleverDomeClient
             securityGroupID = response.ReturnValue.ID.Value;
         }
 
+        static void DeleteUser(IVendorManagement vendorMgmt, string externalUserID)
+        {
+            vendorMgmt.DeleteUser(externalUserID, vendorName);
+        }
+
         static void AddClientToAdvisor(int clientID, int advisorID,
-            IVendorManagement vendorMgmt, IWidgets widgets, Guid sessionID,
-            string vendorName)
+            IVendorManagement vendorMgmt, IWidgets widgets, Guid sessionID)
         {
             var response = widgets.GetUserSecurityGroups(sessionID, clientID, true, (int)CleverDomeCommon.SecurityGroupType.Client);
             if (response.Result != ResultType.Success)
@@ -361,6 +491,20 @@ namespace CleverDomeClient
             widgets.AddUserToSecurityGroup(sessionID, securityGroupID, advisorID);
 
             vendorMgmt.AllowAccessToUserTagsHierarchy(vendorName, advisorID, clientID);
+        }
+
+        static void RemoveClientFromAdvisor(int clientID, int advisorID,
+            IVendorManagement vendorMgmt, IWidgets widgets, Guid sessionID)
+        {
+            var response = widgets.GetUserSecurityGroups(sessionID, clientID, true, (int)CleverDomeCommon.SecurityGroupType.Client);
+            if (response.Result != ResultType.Success)
+            {
+                throw new Exception(response.Message);
+            }
+
+            var securityGroupID = response.ReturnValue.Single().ID.Value;
+
+            widgets.RemoveUserFromSecurityGroup(sessionID, securityGroupID, advisorID);
         }
 
     }
