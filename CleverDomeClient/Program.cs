@@ -36,6 +36,7 @@ namespace CleverDomeClient
                 Console.WriteLine("SAML request completed. SessionID = {0}.", sessionID);
                 ChannelFactory<IWidgets> channelFactory = new ChannelFactory<IWidgets>("BasicHttpBinding_IWidgets");
                 IWidgets widgets = channelFactory.CreateChannel();
+                PrintTemplatesAndDescriptions(widgets, sessionID.Value);
                 documentGuid = UploadFile(widgets, sessionID.Value, testFilePath);
                 Console.WriteLine("Uploaded file guid: {0}", documentGuid);
                 SetTestMetadata(widgets, sessionID.Value, documentGuid);
@@ -71,6 +72,36 @@ namespace CleverDomeClient
 
             Console.WriteLine("Press any key to exit...");
             Console.ReadLine();
+        }
+
+        static void PrintTemplatesAndDescriptions(IWidgets widgets, Guid sessionID)
+        {
+            foreach (int templateID in GetTemplatesByApplication(widgets, sessionID, applicationID))
+            {
+                GetDescriptionsByApplication(widgets, sessionID, applicationID, templateID);
+            }
+        }
+
+        static List<int> GetTemplatesByApplication(IWidgets widgetsClient, Guid sessionID, int applicationID)
+        {
+            List<int> templatesID = new List<int>();
+            foreach (var template in widgetsClient.GetDocumentTemplates(sessionID, applicationID).ReturnValue)
+            {
+                Console.WriteLine("templateID={0}, Name={1}", template.ID, template.Name);
+                templatesID.Add(template.ID);
+            }
+            return templatesID;
+        }
+
+        static List<int?> GetDescriptionsByApplication(IWidgets widgetsClient, Guid sessionID, int applicationID, int templateID)
+        {
+            List<int?> descriptionsID = new List<int?>();
+            foreach (var type in widgetsClient.GetDocumentTypes(sessionID, templateID, applicationID).ReturnValue)
+            {
+                Console.WriteLine("         templateID={0}, descriptionID={1}, Name={2}", templateID, type.ID, type.Name);
+                descriptionsID.Add(type.ID);
+            }
+            return descriptionsID;
         }
 
         private static void SetTestPermission(IWidgets widgets, Guid sessionID, int userID, Guid documentGuid)
