@@ -70,6 +70,13 @@ namespace CleverDomeClient
                 }
             }
 
+            Console.WriteLine("Press 'Y' if you want to manage user emails.");
+            if (Console.ReadLine().ToLower()[0] == 'y')
+            {
+                UserEmailManaging();
+            }
+
+
             Console.WriteLine("Press any key to exit...");
             Console.ReadLine();
         }
@@ -538,5 +545,49 @@ namespace CleverDomeClient
             widgets.RemoveUserFromSecurityGroup(sessionID, securityGroupID, advisorID);
         }
 
+        private static void UserEmailManaging()
+        {
+            Console.WriteLine("Please, enter external user identifier: ");
+            string externalUserID = Console.ReadLine();
+
+            var channelFactory = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
+            channelFactory.Credentials.ClientCertificate.Certificate = GetClientCertificate();
+            IVendorManagement vendorMgmt = channelFactory.CreateChannel();
+
+            ListUserEmails(vendorMgmt, externalUserID);
+
+            Console.WriteLine("Enter new primary email:");
+            var newPrimaryEmail = Console.ReadLine();
+            vendorMgmt.AddUserEmail(vendorName, externalUserID, newPrimaryEmail, true);
+
+            ListUserEmails(vendorMgmt, externalUserID);
+
+            Console.WriteLine("Enter new not primary email:");
+            var newNotPrimaryEmail = Console.ReadLine();
+            var notPrimaryEmailID = vendorMgmt.AddUserEmail(vendorName, externalUserID, newNotPrimaryEmail, false);
+
+            ListUserEmails(vendorMgmt, externalUserID);
+
+            Console.WriteLine("Press any key to set last added email primary:");
+            Console.ReadLine();
+            vendorMgmt.SetUserPrimaryEmail(vendorName, externalUserID, notPrimaryEmailID);
+
+            ListUserEmails(vendorMgmt, externalUserID);
+
+            Console.WriteLine("Enter ID of email to remove:");
+            var removedEmailID = int.Parse(Console.ReadLine());
+            vendorMgmt.RemoveUserEmail(vendorName, externalUserID, removedEmailID);
+
+            ListUserEmails(vendorMgmt, externalUserID);
+        }
+
+        private static void ListUserEmails(IVendorManagement vendorMgmt, string externalUserID)
+        {
+            var emails = vendorMgmt.GetUserEmails(vendorName, externalUserID);
+            foreach (var email in emails)
+            {
+                Console.WriteLine(string.Format("ID: {0}, Email: {1}, Active: {2}, Primary: {3}", email.ID, email.Email, email.Active, email.IsPrimary));
+            }
+        }
     }
 }
