@@ -19,8 +19,6 @@ namespace CleverDomeClient
         static string vendorName = ConfigurationManager.AppSettings["TestVendorName"];
         static int applicationID = int.Parse(ConfigurationManager.AppSettings["TestApplicationID"]);
 		static string certPath = ConfigurationManager.AppSettings["VendorCertificatePath"];
-        static int templateID = 0;
-        static int descriptionID = 79;
         static string certPassword = ConfigurationManager.AppSettings["CertPassword"];
         static string cleverCertPath = ConfigurationManager.AppSettings["CleverDomeCertPath"];
         static string testFilePath = "TestFile.pdf";
@@ -33,7 +31,10 @@ namespace CleverDomeClient
             Guid documentGuid = default(Guid);
             if (sessionID.HasValue)
             {
-                Console.WriteLine("SAML request completed. SessionID = {0}.", sessionID);
+                Console.WriteLine("SAML request completed");
+                Console.WriteLine("SessionID = {0}.", sessionID);
+                Console.WriteLine();
+
                 ChannelFactory<IWidgets> channelFactory = new ChannelFactory<IWidgets>("BasicHttpBinding_IWidgets");
                 IWidgets widgets = channelFactory.CreateChannel();
                 PrintTemplatesAndDescriptions(widgets, sessionID.Value);
@@ -48,82 +49,48 @@ namespace CleverDomeClient
                 Console.WriteLine("SAML request not completed.");
             }
 
-            Console.WriteLine("Press 'Y' if you want to add user.");
-            string line = Console.ReadLine();
-            int userCreatedID = default(int);
-            if (line.ToLower()[0] == 'y')
-            {
-                userCreatedID = UserCreation();
-            }
-
-            if (userCreatedID > 0)
-            {
-                Console.WriteLine("Press 'Y' if you want to add permission to created user.");
-                line = Console.ReadLine();
-                if (line.ToLower()[0] == 'y')
-                {
-                    Console.WriteLine("SAML request completed. SessionID = {0}.", sessionID);
-                    ChannelFactory<IWidgets> channelFactory = new ChannelFactory<IWidgets>("BasicHttpBinding_IWidgets");
-                    IWidgets widgets = channelFactory.CreateChannel();
-                    SetTestPermission(widgets, sessionID.Value, userCreatedID, documentGuid);
-                    channelFactory.Close();
-                }
-            }
-
-            Console.WriteLine("Press 'Y' if you want to manage user emails.");
-            if (Console.ReadLine().ToLower()[0] == 'y')
-            {
-                UserEmailManaging();
-            }
-
+            TestUserManagement(sessionID.Value, documentGuid);
 
             Console.WriteLine("Press any key to exit...");
-            Console.ReadLine();
+            Console.ReadKey();
         }
 
         static void PrintTemplatesAndDescriptions(IWidgets widgets, Guid sessionID)
         {
-            foreach (int templateID in GetTemplatesByApplication(widgets, sessionID, applicationID))
+            Console.WriteLine("Document templates:");
+            var templates = widgets.GetDocumentTemplates(sessionID, applicationID).ReturnValue;
+            foreach (var template in templates)
             {
-                GetDescriptionsByApplication(widgets, sessionID, applicationID, templateID);
+                PrintDocumentTemplate(template);   
+                var documentTypes = widgets.GetDocumentTypes(sessionID, template.ID, applicationID).ReturnValue;
+
+                Console.WriteLine("Document types for template '{0}'", template.Name);
+                PrintDocumentTypes(documentTypes);
             }
+
+            Console.WriteLine();
         }
 
-        static List<int> GetTemplatesByApplication(IWidgets widgetsClient, Guid sessionID, int applicationID)
+        public static void PrintDocumentTemplate(DocumentTemplate template)
         {
-            List<int> templatesID = new List<int>();
-            foreach (var template in widgetsClient.GetDocumentTemplates(sessionID, applicationID).ReturnValue)
-            {
-                Console.WriteLine("templateID={0}, Name={1}", template.ID, template.Name);
-                templatesID.Add(template.ID);
-            }
-            return templatesID;
+            Console.WriteLine("Template ID: {0}, Name: {1}", template.ID, template.Name);
         }
 
-        static List<int?> GetDescriptionsByApplication(IWidgets widgetsClient, Guid sessionID, int applicationID, int templateID)
+        public static void PrintDocumentTypes(IEnumerable<DocumentType> types)
         {
-            List<int?> descriptionsID = new List<int?>();
-            foreach (var type in widgetsClient.GetDocumentTypes(sessionID, templateID, applicationID).ReturnValue)
+            foreach (var type in types)
             {
-                Console.WriteLine("         templateID={0}, descriptionID={1}, Name={2}", templateID, type.ID, type.Name);
-                descriptionsID.Add(type.ID);
+                Console.WriteLine("  ID: {0}, Name: {1}", type.ID, type.Name);
             }
-            return descriptionsID;
         }
 
         private static void SetTestPermission(IWidgets widgets, Guid sessionID, int userID, Guid documentGuid)
         {
-            PrintPermissions();
-
-            Console.WriteLine("Enter permission level:");
-            string strPermissionID = Console.ReadLine();
-            int permissionID = int.Parse(strPermissionID);
-
-            var res = widgets.SetPermissionsForUser(sessionID, new Guid[] { documentGuid }, userID, permissionID);
+            var res = widgets.SetPermissionsForUser(sessionID, new Guid[] { documentGuid }, userID, (int)PermissionLevel.Share);
 
             if (res.Result == ResultType.Success)
             {
-                Console.WriteLine("Successfully added permission.");
+                Console.WriteLine("Permission has been added successfully");
 
                 var userPermissions = widgets
                     .GetDocumentsSharingInfo(sessionID, new Guid[] { documentGuid }).ReturnValue
@@ -132,14 +99,17 @@ namespace CleverDomeClient
 
                 PrintPermissions(userPermissions.ID);
             }
+            else
+            {
+                Console.WriteLine("Error occured while adding permission");
+            }
         }
 
         private static void PrintPermissions(int permissionLevel = (int)PermissionLevel.Admin)
         {
-            Console.WriteLine("List of all permissions:");
+            Console.WriteLine("List of user permissions to the document:");
 
-            foreach (var permission in
-                GetEnumValues<PermissionLevel>().Where(p => (int)p <= permissionLevel))
+            foreach (var permission in GetEnumValues<PermissionLevel>().Where(p => (int)p <= permissionLevel))
             {
                 Console.WriteLine("{0}: {1}", (int)permission, permission.ToString());
             }
@@ -152,46 +122,22 @@ namespace CleverDomeClient
             return Enum.GetValues(typeof(T)).Cast<T>();
         }
 
-        private static int UserCreation()
+        private static int CreateUser(string externalUserID)
         {
-			var channelFactory = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
+            var channelFactory = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
             channelFactory.Credentials.ClientCertificate.Certificate = GetClientCertificate();
             IVendorManagement vendorMgmt = channelFactory.CreateChannel();
 
-            Console.WriteLine("Please enter UserID from your system to verify that this person doesn't exist in our database.");
-            string externalUserID = Console.ReadLine();
-
             int userID = 0;
-            bool userExists = CheckUser(vendorMgmt, externalUserID, ref userID);
-            if (userExists)
+
+            try
             {
-                Console.WriteLine("Sorry, but this user already exists.");
+                userID = CreateUser(vendorMgmt, externalUserID, "TestFirstName", "TestLastName", string.Format("{0}@testemail.com", externalUserID), "0123456789");
+                Console.WriteLine("User has been created successfully.");
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("User is not present in our database. Please enter necessary information to create a new user.");
-
-                Console.WriteLine("First Name:");
-                string firstName = Console.ReadLine();
-
-                Console.WriteLine("Last Name:");
-                string lastName = Console.ReadLine();
-
-                Console.WriteLine("Email:");
-                string email = Console.ReadLine();
-
-                Console.WriteLine("Phone:");
-                string phone = Console.ReadLine();
-
-                try
-                {
-                    userID = CreateUser(vendorMgmt, externalUserID, firstName, lastName, email, phone);
-                    Console.WriteLine("User has been created successfully.");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Sorry, but user has not been created.");
-                }
+                Console.WriteLine("Sorry, but user has not been created.");
             }
 
             return userID;
@@ -215,8 +161,11 @@ namespace CleverDomeClient
 
         static void SetTestMetadata(IWidgets widgets, Guid sessionID, Guid documentGuid)
         {
-            Console.WriteLine("--- Metadata before ---");
+            Console.WriteLine();
+            Console.WriteLine("Initial document metadata:");
             PrintMetadata(widgets, sessionID, documentGuid);
+
+            Console.WriteLine("Adding tag to the document...");
             DocumentMetadataValueBase[] values = new DocumentMetadataValueBase [1]
             {
                 new DocumentMetadataValueBase{FieldID= 78, FieldValue = "Test Tag" }
@@ -229,23 +178,33 @@ namespace CleverDomeClient
             }
 
             Console.WriteLine();
-            Console.WriteLine("--- Metadata after ---");
+            Console.WriteLine("Document metadata after adding tag:");
             PrintMetadata(widgets, sessionID, documentGuid);
 
+            Console.WriteLine("Removing all metadata values from the document...");
             RemoveAllMetadata(widgets, sessionID, documentGuid);
 
             Console.WriteLine();
-            Console.WriteLine("--- Metadata after removing all values ---");
+            Console.WriteLine("Document metadata:");
             PrintMetadata(widgets, sessionID, documentGuid);
+
         }
 
         static void PrintMetadata(IWidgets widgets, Guid sessionID, Guid documentGuid)
         {
-            foreach (var metadataValue in widgets.GetDocumentMetadataBase(sessionID, documentGuid).ReturnValue)
+            var metadataValues = widgets.GetDocumentMetadataBase(sessionID, documentGuid).ReturnValue;
+            if (!metadataValues.Any())
+            {
+                Console.WriteLine("Document metadata is empty");
+            }
+
+            foreach (var metadataValue in metadataValues)
 	        {
-                Console.WriteLine("TypeID={0}, TypeName={1}, ValueID={2}, Value={3}", metadataValue.FieldID, 
+                Console.WriteLine("TypeID: {0}, TypeName: {1}, ValueID: {2}, Value: {3}", metadataValue.FieldID, 
                     metadataValue.FieldName, metadataValue.FieldValueID, metadataValue.FieldValue);
-	        } 
+	        }
+
+            Console.WriteLine();
         }
 
         static void RemoveAllMetadata(IWidgets widgets, Guid sessionID, Guid documentGuid)
@@ -271,16 +230,6 @@ namespace CleverDomeClient
         static int CreateUser(IVendorManagement vendorMgmt, string userID, string firstName, string lastName, string email, string phone)
         {
             return vendorMgmt.CreateUser(userID, vendorName, firstName, lastName, email, phone);
-        }
-
-        static bool CheckUser(IVendorManagement vendorMgmt, string externalUserID, ref int userID)
-        {
-            var nullUserID = vendorMgmt.CheckUser(externalUserID, vendorName);
-            if (nullUserID.HasValue)
-            {
-                userID = nullUserID.Value;
-            }
-            return nullUserID.HasValue;
         }
 
         #region Security Group Test
@@ -309,8 +258,6 @@ namespace CleverDomeClient
             {
                 widgets.RemoveUserFromSecurityGroup(sessionID, securityGroupID, user.ID);
             }
-
-            Console.WriteLine("Remove users from the security group");
         }
 
         private static int GetInternalUserID(string externalUserID)
@@ -325,8 +272,12 @@ namespace CleverDomeClient
 
         private static void TestSecurityGroups(IWidgets widgets, Guid sessionID, Guid documentGuid)
         {
+            Console.WriteLine("Creating security group...");
             var createGroupResult = widgets.CreateSecurityGroup(sessionID, "Test 1", "Test Security Group 1", 1, GetInternalUserID(Program.userID), applicationID);
             int securityGroupID = createGroupResult.ReturnValue.ID.Value;
+
+            Console.WriteLine();
+            Console.WriteLine("Adding users to security group...");
             List<int> usersToAdd = new List<int> { 1, 2, 3 };
             foreach (int userID in usersToAdd)
             {
@@ -334,21 +285,58 @@ namespace CleverDomeClient
             }
 
             PrintSecurityGroup(widgets, sessionID, securityGroupID);
+
+            Console.WriteLine();
+            Console.WriteLine("Removing all users from security group...");
             RemoveAllUsersFromSecurityGroup(widgets, sessionID, securityGroupID);
             PrintSecurityGroup(widgets, sessionID, securityGroupID);
 
+            Console.WriteLine();
+            Console.WriteLine("Attaching security group to uploaded document...");
             widgets.AttachSecurityGroupsToDocument(sessionID, documentGuid, new int[] { securityGroupID }, (int)PermissionLevel.Modify);
-            var groupsBeforeDeletion = widgets.GetSecurityGroups(sessionID, documentGuid).ReturnValue;
-            Console.WriteLine("Groups count before removing: {0}.", groupsBeforeDeletion.DocumentSecurityData.Length);
+            Console.WriteLine("Security group attached");
 
+            var groupsBeforeDeletion = widgets.GetSecurityGroups(sessionID, documentGuid).ReturnValue;
+            Console.WriteLine("Document security groups count: {0}", groupsBeforeDeletion.DocumentSecurityData.Length);
+
+            Console.WriteLine();
+            Console.WriteLine("Removing security group from the document...");
             widgets.RemoveSecurityGroupFromDocument(sessionID, documentGuid, securityGroupID);
             var groupsAfterDeletion = widgets.GetSecurityGroups(sessionID, documentGuid).ReturnValue;
-            Console.WriteLine("Groups count after removing: {0}.", groupsAfterDeletion.DocumentSecurityData.Length);
+            Console.WriteLine("Document security groups count: {0}", groupsAfterDeletion.DocumentSecurityData.Length);
 
+            Console.WriteLine();
+            Console.WriteLine("Deleting security group...");
             widgets.RemoveSecurityGroup(sessionID, securityGroupID);
+            Console.WriteLine("Security group has been successfully deleted");
         }
 
         #endregion
+
+        public static void TestUserManagement(Guid sessionID, Guid documentGuid)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Creating new user..");
+
+            string externalUserID = Guid.NewGuid().ToString();
+
+            int createdUserID = CreateUser(externalUserID);
+
+            if (createdUserID != 0)
+            {
+                ChannelFactory<IWidgets> channelFactory = new ChannelFactory<IWidgets>("BasicHttpBinding_IWidgets");
+                IWidgets widgets = channelFactory.CreateChannel();
+
+                Console.WriteLine();
+                Console.WriteLine("Adding permission to uploaded document for newly created user...");
+
+                SetTestPermission(widgets, sessionID, createdUserID, documentGuid);
+                channelFactory.Close();
+
+                UserEmailManaging(externalUserID);
+            }
+
+        }
 
         static void CreateClient()
         {
@@ -543,37 +531,38 @@ namespace CleverDomeClient
             widgets.RemoveUserFromSecurityGroup(sessionID, securityGroupID, advisorID);
         }
 
-        private static void UserEmailManaging()
+        private static void UserEmailManaging(string externalUserID)
         {
-            Console.WriteLine("Please, enter external user identifier: ");
-            string externalUserID = Console.ReadLine();
-
             var channelFactory = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
             channelFactory.Credentials.ClientCertificate.Certificate = GetClientCertificate();
             IVendorManagement vendorMgmt = channelFactory.CreateChannel();
 
+            Console.WriteLine("User emails:");
             ListUserEmails(vendorMgmt, externalUserID);
 
-            Console.WriteLine("Enter new primary email:");
-            var newPrimaryEmail = Console.ReadLine();
+            Console.WriteLine();
+            Console.WriteLine("Adding new primary email...");
+            var newPrimaryEmail = string.Format("{0}new-primary@email.com", externalUserID);
             vendorMgmt.AddUserEmail(vendorName, externalUserID, newPrimaryEmail, true);
 
             ListUserEmails(vendorMgmt, externalUserID);
 
-            Console.WriteLine("Enter new not primary email:");
-            var newNotPrimaryEmail = Console.ReadLine();
+            Console.WriteLine();
+            Console.WriteLine("Adding new not primary email...");
+            var newNotPrimaryEmail = string.Format("{0}new-not-primary@email.com", externalUserID);
             var notPrimaryEmailID = vendorMgmt.AddUserEmail(vendorName, externalUserID, newNotPrimaryEmail, false);
 
             ListUserEmails(vendorMgmt, externalUserID);
 
-            Console.WriteLine("Press any key to set last added email primary:");
-            Console.ReadLine();
+            Console.WriteLine();
+            Console.WriteLine("Setting last added email primary...");
             vendorMgmt.SetUserPrimaryEmail(vendorName, externalUserID, notPrimaryEmailID);
 
             ListUserEmails(vendorMgmt, externalUserID);
 
-            Console.WriteLine("Enter ID of email to remove:");
-            var removedEmailID = int.Parse(Console.ReadLine());
+            Console.WriteLine();
+            Console.WriteLine("Removing first email...");
+            var removedEmailID = vendorMgmt.GetUserEmails(vendorName, externalUserID).First().ID;
             vendorMgmt.RemoveUserEmail(vendorName, externalUserID, removedEmailID);
 
             ListUserEmails(vendorMgmt, externalUserID);
