@@ -126,7 +126,7 @@ namespace CleverDomeClient
                 Console.WriteLine("Successfully added permission.");
 
                 var userPermissions = widgets
-                    .GetDocumentSharingInfo(sessionID, documentGuid).ReturnValue
+                    .GetDocumentsSharingInfo(sessionID, new Guid[] { documentGuid }).ReturnValue
                     .DocumentUsersSharing.Where(u => u.UserID == userID).Single()
                     .Permissions;
 
@@ -204,8 +204,6 @@ namespace CleverDomeClient
             {
                 Dictionary<string, string> parameters = new Dictionary<string, string>();
                 parameters.Add("sessionID", sessionID.ToString());
-                parameters.Add("templateID", templateID.ToString());
-                parameters.Add("descriptionID", descriptionID.ToString());
                 parameters.Add("applicationID", applicationID.ToString());
                 postStream = StreamBuilder.Build(file, Path.GetFileName(fileName), parameters);
             }
@@ -221,7 +219,7 @@ namespace CleverDomeClient
             PrintMetadata(widgets, sessionID, documentGuid);
             DocumentMetadataValueBase[] values = new DocumentMetadataValueBase [1]
             {
-                new DocumentMetadataValueBase{FieldID= 99, FieldValue = "https://google.com" }
+                new DocumentMetadataValueBase{FieldID= 78, FieldValue = "Test Tag" }
             };
 
             var result = widgets.SetMetadataValues(sessionID, documentGuid, values, new int[0]);
@@ -327,7 +325,7 @@ namespace CleverDomeClient
 
         private static void TestSecurityGroups(IWidgets widgets, Guid sessionID, Guid documentGuid)
         {
-            var createGroupResult = widgets.CreateSecurityGroup(sessionID, "Test 1", "Test Security Group 1", 1, GetInternalUserID(Program.userID));
+            var createGroupResult = widgets.CreateSecurityGroup(sessionID, "Test 1", "Test Security Group 1", 1, GetInternalUserID(Program.userID), applicationID);
             int securityGroupID = createGroupResult.ReturnValue.ID.Value;
             List<int> usersToAdd = new List<int> { 1, 2, 3 };
             foreach (int userID in usersToAdd)
@@ -485,7 +483,7 @@ namespace CleverDomeClient
         {
             clientID = vendorMgmt.CreateUser(externalUserID, vendorName, firstName, lastName, email, phone);
             
-            var response = widgets.CreateSecurityGroup(sessionID, securityGroupName, securityGroupDescription, (int)CleverDomeCommon.SecurityGroupType.Client, clientID);
+            var response = widgets.CreateSecurityGroup(sessionID, securityGroupName, securityGroupDescription, (int)CleverDomeCommon.SecurityGroupType.Client, clientID, applicationID);
             if (response.Result != ResultType.Success)
             {
                 throw new Exception(response.Message);
@@ -501,7 +499,7 @@ namespace CleverDomeClient
         {
             advisorID = vendorMgmt.CreateUser(externalUserID, vendorName, firstName, lastName, email, phone);
 
-            var response = widgets.CreateSecurityGroup(sessionID, securityGroupName, securityGroupDescription, (int)CleverDomeCommon.SecurityGroupType.Owner, advisorID);
+            var response = widgets.CreateSecurityGroup(sessionID, securityGroupName, securityGroupDescription, (int)CleverDomeCommon.SecurityGroupType.Owner, advisorID, applicationID);
             if (response.Result != ResultType.Success)
             {
                 throw new Exception(response.Message);
