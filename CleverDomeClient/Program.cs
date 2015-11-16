@@ -18,7 +18,7 @@ namespace CleverDomeClient
         static string userID = ConfigurationManager.AppSettings["TestUserID"];
         static string vendorName = ConfigurationManager.AppSettings["TestVendorName"];
         static int applicationID = int.Parse(ConfigurationManager.AppSettings["TestApplicationID"]);
-		static string certPath = ConfigurationManager.AppSettings["VendorCertificatePath"];
+        static string certPath = ConfigurationManager.AppSettings["VendorCertificatePath"];
         static string certPassword = ConfigurationManager.AppSettings["CertPassword"];
         static string cleverCertPath = ConfigurationManager.AppSettings["CleverDomeCertPath"];
         static string testFilePath = "TestFile.pdf";
@@ -43,13 +43,13 @@ namespace CleverDomeClient
                 SetTestMetadata(widgets, sessionID.Value, documentGuid);
                 TestSecurityGroups(widgets, sessionID.Value, documentGuid);
                 channelFactory.Close();
+
+                TestUserManagement(sessionID.Value, documentGuid);
             }
             else
             {
                 Console.WriteLine("SAML request not completed.");
             }
-
-            TestUserManagement(sessionID.Value, documentGuid);
 
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
@@ -61,7 +61,7 @@ namespace CleverDomeClient
             var templates = widgets.GetDocumentTemplates(sessionID, applicationID).ReturnValue;
             foreach (var template in templates)
             {
-                PrintDocumentTemplate(template);   
+                PrintDocumentTemplate(template);
                 var documentTypes = widgets.GetDocumentTypes(sessionID, template.ID, applicationID).ReturnValue;
 
                 Console.WriteLine("Document types for template '{0}'", template.Name);
@@ -166,7 +166,7 @@ namespace CleverDomeClient
             PrintMetadata(widgets, sessionID, documentGuid);
 
             Console.WriteLine("Adding tag to the document...");
-            DocumentMetadataValueBase[] values = new DocumentMetadataValueBase [1]
+            DocumentMetadataValueBase[] values = new DocumentMetadataValueBase[1]
             {
                 new DocumentMetadataValueBase{FieldID= 78, FieldValue = "Test Tag" }
             };
@@ -199,10 +199,10 @@ namespace CleverDomeClient
             }
 
             foreach (var metadataValue in metadataValues)
-	        {
-                Console.WriteLine("TypeID: {0}, TypeName: {1}, ValueID: {2}, Value: {3}", metadataValue.FieldID, 
+            {
+                Console.WriteLine("TypeID: {0}, TypeName: {1}, ValueID: {2}, Value: {3}", metadataValue.FieldID,
                     metadataValue.FieldName, metadataValue.FieldValueID, metadataValue.FieldValue);
-	        }
+            }
 
             Console.WriteLine();
         }
@@ -262,7 +262,7 @@ namespace CleverDomeClient
 
         private static int GetInternalUserID(string externalUserID)
         {
-			var channelFactory = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
+            var channelFactory = new ChannelFactory<IVendorManagement>("MaxClockSkewBinding");
             channelFactory.Credentials.ClientCertificate.Certificate = GetClientCertificate();
             IVendorManagement vendorMgmt = channelFactory.CreateChannel();
             int internalUserID = vendorMgmt.CheckUser(externalUserID, vendorName).Value;
@@ -470,7 +470,7 @@ namespace CleverDomeClient
             out int clientID, out int securityGroupID)
         {
             clientID = vendorMgmt.CreateUser(externalUserID, vendorName, firstName, lastName, email, phone);
-            
+
             var response = widgets.CreateSecurityGroup(sessionID, securityGroupName, securityGroupDescription, (int)CleverDomeCommon.SecurityGroupType.Client, clientID, applicationID);
             if (response.Result != ResultType.Success)
             {
